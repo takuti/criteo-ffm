@@ -1,4 +1,4 @@
-## Usage
+## Data
 
 Download and convert the full dataset into CSV format:
 
@@ -15,28 +15,12 @@ ln -s train.tiny.csv tr.csv
 ln -s test.tiny.csv te.csv
 ```
 
-Build LIBFFM and preprocess data as the [winning solution did](https://www.csie.ntu.edu.tw/~r01922136/kaggle-2014-criteo.pdf):
+## Usage
 
-```sh
-make
-```
-
-Note: This repository does not undergo GDBT-based preprocessing stage called `Pre-A` in the document.
-
-Seek the best set of hyperparams with validation set as:
-
-```sh
-./ffm-train -k 4 -t 18 -s 10 -p va.sp tr.sp model
-```
-
-Build final model and predict probability for test data:
-
-```sh
-./ffm-train -k 4 -t 18 -s 10 tr.ffm model
-./ffm-predict te.ffm model submission.csv
-```
+Move to `libffm/` or `hivemall/` and follow the instructions.
 
 ## References
 
 - [guestwalk/kaggle-2014-criteo](https://github.com/guestwalk/kaggle-2014-criteo)
 - [chenhuang-learn/ffm](https://github.com/chenhuang-learn/ffm)
+- Hivemall FFM on the criteo data: https://gist.github.com/myui/aaeef548a17eb90c4e88f824c3ca1bcd
