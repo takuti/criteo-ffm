@@ -1,4 +1,5 @@
 #! /usr/bin/env python
+
 import sys
 
 input_file = sys.argv[1]
@@ -14,4 +15,3 @@ for line in open(input_file):
     output_line += "\n"
     output_handle.write(output_line)
 output_handle.close()
-

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
-import argparse, csv, hashlib
+import argparse
+import csv
 
 parser = argparse.ArgumentParser(description='process some integers')
 parser.add_argument('csv_path', type=str, nargs=1, help='set path to the csv file')
