@@ -1,0 +1,11 @@
+tr.csv
+te.csv
+
+ffm-train
+ffm-predict
+*.o
+
+fc.trva.t10.txt
+*.ffm*
+model
+*.out
