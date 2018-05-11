@@ -8,5 +8,3 @@ ffm-predict
 fc.trva.t10.txt
 *.ffm*
 *.sp*
-model
-*.out

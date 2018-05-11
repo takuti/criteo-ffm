@@ -23,16 +23,17 @@ make
 
 Note: This repository does not undergo GDBT-based preprocessing stage called `Pre-A` in the document.
 
-Seek the best hyperparams with validation set:
+Seek the best set of hyperparams with validation set as:
 
 ```sh
-./ffm-train -k 4 -t 18 -s ${thread_num} -p va.sp tr.sp model
+./ffm-train -k 4 -t 18 -s 10 -p va.sp tr.sp model
 ```
 
 Build final model and predict probability for test data:
 
 ```sh
-./run.sh
+./ffm-train -k 4 -t 18 -s 10 tr.ffm model
+./ffm-predict te.ffm model submission.csv
 ```
 
 ## References
