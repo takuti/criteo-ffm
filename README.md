@@ -15,16 +15,10 @@ ln -s train.tiny.csv tr.csv
 ln -s test.tiny.csv te.csv
 ```
 
-Build LIBFFM solver:
+Build LIBFFM and preprocess data as the [winning solution did](https://www.csie.ntu.edu.tw/~r01922136/kaggle-2014-criteo.pdf):
 
 ```sh
 make
-```
-
-Preprocess data as the [winning solution did](https://www.csie.ntu.edu.tw/~r01922136/kaggle-2014-criteo.pdf):
-
-```sh
-./preprocess.sh
 ```
 
 Note: This repository does not undergo GDBT-based preprocessing stage called `Pre-A` in the document.
