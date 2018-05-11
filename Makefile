@@ -1,13 +1,13 @@
 all: ffm-train ffm-predict
 
 ffm-train:
-	make -C solvers/libffm-1.13
-	ln -sf solvers/libffm-1.13/ffm-train
+	make -C libffm
+	ln -sf libffm/ffm-train
 
 ffm-predict:
-	make -C solvers/libffm-1.13
-	ln -sf solvers/libffm-1.13/ffm-predict
+	make -C libffm
+	ln -sf libffm/ffm-predict
 
 clean:
 	rm -f ffm-train ffm-predict fc.trva.t10.txt *.ffm* *.sp* *.out model
-	make -C solvers/libffm-1.13 clean
+	make -C libffm clean
