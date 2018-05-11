@@ -11,3 +11,5 @@ converters/change_format.py te.ffm te.ffm.formatted
 
 mv tr.ffm.formatted tr.ffm
 mv te.ffm.formatted te.ffm
+
+converters/split.py tr.ffm tr.sp va.sp

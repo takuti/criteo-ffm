@@ -9,5 +9,5 @@ ffm-predict:
 	ln -sf solvers/libffm-1.13/ffm-predict
 
 clean:
-	rm -f ffm-train ffm-predict fc.trva.t10.txt *.ffm* *.out model
+	rm -f ffm-train ffm-predict fc.trva.t10.txt *.ffm* *.sp* *.out model
 	make -C solvers/libffm-1.13 clean
