@@ -1,3 +1,11 @@
+FFM on the Criteo data
+===
+
+Try to replicate the result of [Kaggle Display Advertising Challenge](https://www.kaggle.com/c/criteo-display-ad-challenge) by using the following implementations of field-aware factorization machines (FFMs):
+
+- [LIBFFM](https://github.com/guestwalk/libffm)
+- [Hivemall](https://github.com/apache/incubator-hivemall)
+
 ## Data
 
 Download and convert the full dataset into CSV format:
@@ -23,4 +31,4 @@ Move to `libffm/` or `hivemall/` and follow the instructions.
 
 - [guestwalk/kaggle-2014-criteo](https://github.com/guestwalk/kaggle-2014-criteo)
 - [chenhuang-learn/ffm](https://github.com/chenhuang-learn/ffm)
-- Hivemall FFM on the criteo data: https://gist.github.com/myui/aaeef548a17eb90c4e88f824c3ca1bcd
+- https://gist.github.com/myui/aaeef548a17eb90c4e88f824c3ca1bcd
