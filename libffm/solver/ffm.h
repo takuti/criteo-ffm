@@ -33,6 +33,7 @@ struct ffm_parameter {
     ffm_int nr_iters = 15;
     ffm_int k = 4; // number of latent factors
     bool normalization = true;
+    bool cumulative_loss = false;
     bool auto_stop = false;
 };
 

@@ -602,7 +602,10 @@ ffm_model ffm_train_on_disk(string tr_path, string va_path, ffm_parameter param)
             }
         }
 
-        return loss / prob.meta.l;
+        if (!param.cumulative_loss) {
+          return loss /= prob.meta.l;
+        }
+        return loss;
     };
 
     for(ffm_int iter = 1; iter <= param.nr_iters; iter++) {

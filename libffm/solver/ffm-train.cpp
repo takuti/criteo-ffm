@@ -29,6 +29,7 @@ string train_help() {
 "-p <path>: set path to the validation set\n"
 "--quiet: quiet mode (no output)\n"
 "--no-norm: disable instance-wise normalization\n"
+"--cumulative-loss: return cumulative loss rather than mean of it\n"
 "--auto-stop: stop at the iteration that achieves the best validation loss (must be used with -p)\n");
 }
 
@@ -107,6 +108,8 @@ Option parse_option(int argc, char **argv) {
             opt.param.normalization = false;
         } else if(args[i].compare("--quiet") == 0) {
             opt.quiet = true;
+        } else if(args[i].compare("--cumulative-loss") == 0) {
+            opt.param.cumulative_loss = true;
         } else if(args[i].compare("--auto-stop") == 0) {
             opt.param.auto_stop = true;
         } else {
