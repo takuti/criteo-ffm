@@ -25,6 +25,12 @@ ln -s test.tiny.csv te.csv
 
 ## Usage
 
+Build LIBFFM and preprocess data as the [winning solution did](https://www.csie.ntu.edu.tw/~r01922136/kaggle-2014-criteo.pdf):
+
+```sh
+make
+```
+
 Move to [libffm/](./libffm/) or [hivemall/](./hivemall/) and follow the instructions.
 
 ## References
