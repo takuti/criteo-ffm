@@ -25,7 +25,7 @@ ln -s test.tiny.csv te.csv
 
 ## Usage
 
-Move to `libffm/` or `hivemall/` and follow the instructions.
+Move to [libffm/](./libffm/) or [hivemall/](./hivemall/) and follow the instructions.
 
 ## References
 
