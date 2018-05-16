@@ -9,6 +9,11 @@ CREATE TABLE  criteo.ffm_model (
 INSERT OVERWRITE TABLE criteo.ffm_model
 SELECT
   train_ffm(features, label, '-init_v random -classification -iterations 15 -factors 4 -eta 0.2 -l2norm -optimizer sgd -lambda 0.00002 -cv_rate 0.0')
-from
-  criteo.train_vectorized
+FROM (
+  SELECT
+    features, label
+  FROM
+    criteo.train_vectorized
+  CLUSTER BY rand(1)
+) t
 ;
