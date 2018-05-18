@@ -78,7 +78,7 @@ ffm_long get_w_size(ffm_model &model) {
 
 #if defined USESSE
 inline ffm_float wTx(ffm_node *begin, ffm_node *end, ffm_float r,
-                     ffm_model &model, ffm_float kappa = 0, ffm_float eta = 0,
+                     ffm_model &model, bool disable_wi, ffm_float kappa = 0, ffm_float eta = 0,
                      ffm_float lambda = 0, bool do_update = false) {
   ffm_int align0 = 2 * get_k_aligned(model.k);
   ffm_int align1 = model.m * align0;
@@ -89,33 +89,35 @@ inline ffm_float wTx(ffm_node *begin, ffm_node *end, ffm_float r,
 
   __m128 XMMt = _mm_setzero_ps();
 
-  for (ffm_node *N = begin; N != end; N++) {
-    ffm_int j = N->j;
-    ffm_float v = N->v;
-    if (j >= model.n) continue;
+  if (!disable_wi) {
+    for (ffm_node *N = begin; N != end; N++) {
+      ffm_int j = N->j;
+      ffm_float v = N->v;
+      if (j >= model.n) continue;
 
-    ffm_float *wi = model.Wi + (ffm_long)j * 2 * kALIGN;
-    __m128 XMMwi = _mm_load_ps(wi);
+      ffm_float *wi = model.Wi + (ffm_long)j * 2 * kALIGN;
+      __m128 XMMwi = _mm_load_ps(wi);
 
-    __m128 XMMv = _mm_set1_ps(v * r);
+      __m128 XMMv = _mm_set1_ps(v * r);
 
-    if (do_update) {
-      __m128 XMMkappav = _mm_mul_ps(XMMkappa, XMMv);
-      __m128 XMMg = _mm_add_ps(_mm_mul_ps(XMMlambda, XMMwi),
-                               XMMkappav);
+      if (do_update) {
+        __m128 XMMkappav = _mm_mul_ps(XMMkappa, XMMv);
+        __m128 XMMg = _mm_add_ps(_mm_mul_ps(XMMlambda, XMMwi),
+                                 XMMkappav);
 
-      ffm_float *wig = wi + kALIGN;
-      __m128 XMMwig = _mm_load_ps(wig);
-      XMMwig = _mm_add_ps(XMMwig, _mm_mul_ps(XMMg, XMMg));
+        ffm_float *wig = wi + kALIGN;
+        __m128 XMMwig = _mm_load_ps(wig);
+        XMMwig = _mm_add_ps(XMMwig, _mm_mul_ps(XMMg, XMMg));
 
-      XMMwi = _mm_sub_ps(
-          XMMwi,
-          _mm_mul_ps(XMMeta, _mm_mul_ps(_mm_rsqrt_ps(XMMwig), XMMg)));
+        XMMwi = _mm_sub_ps(
+            XMMwi,
+            _mm_mul_ps(XMMeta, _mm_mul_ps(_mm_rsqrt_ps(XMMwig), XMMg)));
 
-      _mm_store_ps(wi, XMMwi);
-      _mm_store_ps(wig, XMMwig);
-    } else {
-      XMMt = _mm_add_ps(XMMt, _mm_mul_ps(XMMwi, XMMv));
+        _mm_store_ps(wi, XMMwi);
+        _mm_store_ps(wig, XMMwig);
+      } else {
+        XMMt = _mm_add_ps(XMMt, _mm_mul_ps(XMMwi, XMMv));
+      }
     }
   }
 
@@ -197,29 +199,30 @@ inline ffm_float wTx(ffm_node *begin, ffm_node *end, ffm_float r,
 #else
 
 inline ffm_float wTx(ffm_node *begin, ffm_node *end, ffm_float r,
-                     ffm_model &model, ffm_float kappa = 0, ffm_float eta = 0,
+                     ffm_model &model, bool disable_wi, ffm_float kappa = 0, ffm_float eta = 0,
                      ffm_float lambda = 0, bool do_update = false) {
   ffm_int align0 = 2 * get_k_aligned(model.k);
   ffm_int align1 = model.m * align0;
 
   ffm_float t = 0;
 
-  // linear term
-  for (ffm_node *N = begin; N != end; N++) {
-    ffm_int j = N->j;
-    ffm_float v = N->v;
-    if (j >= model.n) continue;
+  if (!disable_wi) {
+    for (ffm_node *N = begin; N != end; N++) {
+      ffm_int j = N->j;
+      ffm_float v = N->v;
+      if (j >= model.n) continue;
 
-    ffm_float *wi = model.Wi + (ffm_long)j * 2 * kALIGN;
+      ffm_float *wi = model.Wi + (ffm_long)j * 2 * kALIGN;
 
-    if (do_update) {
-      // AdaGrad
-      ffm_float g = lambda * wi[0] + kappa * (v * r);
-      ffm_float *wig = wi + kALIGN;
-      wig[0] += g * g;
-      wi[0] -= eta / sqrt(wig[0]) * g;
-    } else {
-      t += wi[0] * (v * r);
+      if (do_update) {
+        // AdaGrad
+        ffm_float g = lambda * wi[0] + kappa * (v * r);
+        ffm_float *wig = wi + kALIGN;
+        wig[0] += g * g;
+        wi[0] -= eta / sqrt(wig[0]) * g;
+      } else {
+        t += wi[0] * (v * r);
+      }
     }
   }
 
@@ -293,13 +296,16 @@ ffm_model init_model(ffm_int n, ffm_int m, ffm_parameter param) {
   model.Wi = nullptr;
   model.W = nullptr;
   model.normalization = param.normalization;
+  model.disable_wi = param.disable_wi;
+
+  ffm_float *wi = nullptr;
+  if (!model.disable_wi) {
+    model.Wi = malloc_aligned_float((ffm_long)n * 2 * kALIGN);
+    wi = model.Wi;
+  }
 
   ffm_int k_aligned = get_k_aligned(model.k);
-
-  model.Wi = malloc_aligned_float((ffm_long)n * 2 * kALIGN);
   model.W = malloc_aligned_float((ffm_long)n * m * k_aligned * 2);
-
-  ffm_float *wi = model.Wi;
 
   ffm_float coef = 1.0f / sqrt(model.k);
   ffm_float *w = model.W;
@@ -308,8 +314,11 @@ ffm_model init_model(ffm_int n, ffm_int m, ffm_parameter param) {
   uniform_real_distribution<ffm_float> distribution(0.0, 1.0);
 
   for (ffm_int j = 0; j < model.n; j++) {
-    wi[0] = distribution(generator);
-    wi[kALIGN] = 1; // for AdaGrad
+    if (!model.disable_wi) {
+      wi[0] = distribution(generator);
+      wi[kALIGN] = 1; // for AdaGrad
+      wi += 2 * kALIGN;
+    }
     for (ffm_int f = 0; f < model.m; f++) {
       for (ffm_int d = 0; d < k_aligned;) {
         for (ffm_int s = 0; s < kALIGN; s++, w++, d++) {
@@ -319,7 +328,6 @@ ffm_model init_model(ffm_int n, ffm_int m, ffm_parameter param) {
         w += kALIGN;
       }
     }
-    wi += 2 * kALIGN;
   }
 
   return model;
@@ -577,7 +585,7 @@ ffm_model ffm_train_on_disk(string tr_path, string va_path,
   vector<ffm_float> prev_W(w_size, 0);
 
   if (auto_stop) {
-    prev_Wi.assign(wi_size, 0);
+    if (!model.disable_wi) prev_Wi.assign(wi_size, 0);
     prev_W.assign(w_size, 0);
   }
 
@@ -625,7 +633,7 @@ ffm_model ffm_train_on_disk(string tr_path, string va_path,
 
         ffm_float r = param.normalization ? prob.R[i] : 1;
 
-        ffm_double t = wTx(begin, end, r, model);
+        ffm_double t = wTx(begin, end, r, model, param.disable_wi);
 
         ffm_double expnyt = exp(-y * t);
 
@@ -634,7 +642,7 @@ ffm_model ffm_train_on_disk(string tr_path, string va_path,
         if (do_update) {
           ffm_float kappa = -y * expnyt / (1 + expnyt); // dloss
 
-          wTx(begin, end, r, model, kappa, param.eta, param.lambda, true);
+          wTx(begin, end, r, model, param.disable_wi, kappa, param.eta, param.lambda, true);
         }
       }
     }
@@ -663,14 +671,16 @@ ffm_model ffm_train_on_disk(string tr_path, string va_path,
 
       if (auto_stop) {
         if (va_loss > best_va_loss) {
-          memcpy(model.Wi, prev_Wi.data(), wi_size * sizeof(ffm_float));
+          if (!model.disable_wi)
+            memcpy(model.Wi, prev_Wi.data(), wi_size * sizeof(ffm_float));
           memcpy(model.W, prev_W.data(), w_size * sizeof(ffm_float));
           cout << endl
                << "Auto-stop. Use model at " << iter - 1 << "th iteration."
                << endl;
           break;
         } else {
-          memcpy(prev_Wi.data(), model.Wi, wi_size * sizeof(ffm_float));
+          if (!model.disable_wi)
+            memcpy(prev_Wi.data(), model.Wi, wi_size * sizeof(ffm_float));
           memcpy(prev_W.data(), model.W, w_size * sizeof(ffm_float));
           best_va_loss = va_loss;
         }
@@ -689,15 +699,18 @@ void ffm_save_model(ffm_model &model, string path) {
   f_out.write(reinterpret_cast<char *>(&model.m), sizeof(ffm_int));
   f_out.write(reinterpret_cast<char *>(&model.k), sizeof(ffm_int));
   f_out.write(reinterpret_cast<char *>(&model.normalization), sizeof(bool));
+  f_out.write(reinterpret_cast<char *>(&model.disable_wi), sizeof(bool));
 
   ffm_long wi_size = get_wi_size(model);
-  for (ffm_long offset = 0; offset < wi_size;) {
-    ffm_long next_offset =
-        min(wi_size, offset + (ffm_long)sizeof(ffm_float) * kCHUNK_SIZE);
-    ffm_long size = next_offset - offset;
-    f_out.write(reinterpret_cast<char *>(model.Wi + offset),
-                sizeof(ffm_float) * size);
-    offset = next_offset;
+  if (!model.disable_wi) {
+    for (ffm_long offset = 0; offset < wi_size;) {
+      ffm_long next_offset =
+          min(wi_size, offset + (ffm_long)sizeof(ffm_float) * kCHUNK_SIZE);
+      ffm_long size = next_offset - offset;
+      f_out.write(reinterpret_cast<char *>(model.Wi + offset),
+                  sizeof(ffm_float) * size);
+      offset = next_offset;
+    }
   }
 
   ffm_long w_size = get_w_size(model);
@@ -723,16 +736,19 @@ ffm_model ffm_load_model(string path) {
   f_in.read(reinterpret_cast<char *>(&model.m), sizeof(ffm_int));
   f_in.read(reinterpret_cast<char *>(&model.k), sizeof(ffm_int));
   f_in.read(reinterpret_cast<char *>(&model.normalization), sizeof(bool));
+  f_in.read(reinterpret_cast<char *>(&model.disable_wi), sizeof(bool));
 
   ffm_long wi_size = get_wi_size(model);
-  model.Wi = malloc_aligned_float(wi_size);
-  for (ffm_long offset = 0; offset < wi_size;) {
-    ffm_long next_offset =
-        min(wi_size, offset + (ffm_long)sizeof(ffm_float) * kCHUNK_SIZE);
-    ffm_long size = next_offset - offset;
-    f_in.read(reinterpret_cast<char *>(model.Wi + offset),
-              sizeof(ffm_float) * size);
-    offset = next_offset;
+  if (!model.disable_wi) {
+    model.Wi = malloc_aligned_float(wi_size);
+    for (ffm_long offset = 0; offset < wi_size;) {
+      ffm_long next_offset =
+          min(wi_size, offset + (ffm_long)sizeof(ffm_float) * kCHUNK_SIZE);
+      ffm_long size = next_offset - offset;
+      f_in.read(reinterpret_cast<char *>(model.Wi + offset),
+                sizeof(ffm_float) * size);
+      offset = next_offset;
+    }
   }
 
   ffm_long w_size = get_w_size(model);
@@ -761,7 +777,7 @@ ffm_float ffm_predict(ffm_node *begin, ffm_node *end, ffm_model &model) {
     r = 1 / r;
   }
 
-  ffm_float t = wTx(begin, end, r, model);
+  ffm_float t = wTx(begin, end, r, model, model.disable_wi);
 
   return 1 / (1 + exp(-t));
 }

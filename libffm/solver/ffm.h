@@ -25,6 +25,7 @@ struct ffm_model {
   ffm_float *Wi = nullptr; // linear term
   ffm_float *W = nullptr; // interaction term
   bool normalization;
+  bool disable_wi;
   ~ffm_model();
 };
 
@@ -35,6 +36,7 @@ struct ffm_parameter {
   ffm_int k = 4;  // number of latent factors
   bool normalization = true;
   bool cumulative_loss = false;
+  bool disable_wi = false;
   bool auto_stop = false;
 };
 

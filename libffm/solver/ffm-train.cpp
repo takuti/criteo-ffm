@@ -30,6 +30,7 @@ string train_help() {
       "--quiet: quiet mode (no output)\n"
       "--no-norm: disable instance-wise normalization\n"
       "--cumulative-loss: return cumulative loss rather than mean of it\n"
+      "--disable-wi: not use linear terms\n"
       "--auto-stop: stop at the iteration that achieves the best validation "
       "loss (must be used with -p)\n");
 }
@@ -109,6 +110,8 @@ Option parse_option(int argc, char **argv) {
       opt.quiet = true;
     } else if (args[i].compare("--cumulative-loss") == 0) {
       opt.param.cumulative_loss = true;
+    } else if (args[i].compare("--disable-wi") == 0) {
+      opt.param.disable_wi = true;
     } else if (args[i].compare("--auto-stop") == 0) {
       opt.param.auto_stop = true;
     } else {
