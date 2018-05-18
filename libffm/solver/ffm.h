@@ -22,7 +22,8 @@ struct ffm_model {
   ffm_int n;  // number of features
   ffm_int m;  // number of fields
   ffm_int k;  // number of latent factors
-  ffm_float *W = nullptr;
+  ffm_float *Wi = nullptr; // linear term
+  ffm_float *W = nullptr; // interaction term
   bool normalization;
   ~ffm_model();
 };
