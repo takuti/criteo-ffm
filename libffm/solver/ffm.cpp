@@ -87,6 +87,8 @@ inline ffm_float wTx(ffm_node *begin, ffm_node *end, ffm_float r,
   __m128 XMMeta = _mm_set1_ps(eta);
   __m128 XMMlambda = _mm_set1_ps(lambda);
 
+  __m128 XMMeps = _mm_set1_ps(1e-36);
+
   __m128 XMMt = _mm_setzero_ps();
 
   if (!disable_wi) {
@@ -108,6 +110,9 @@ inline ffm_float wTx(ffm_node *begin, ffm_node *end, ffm_float r,
         ffm_float *wig = wi + kALIGN;
         __m128 XMMwig = _mm_load_ps(wig);
         XMMwig = _mm_add_ps(XMMwig, _mm_mul_ps(XMMg, XMMg));
+
+        // add epsilon to prevent divergence of 1/sqrt(wig)
+        XMMwig = _mm_add_ps(_mm_add_ps(XMMwig, _mm_mul_ps(XMMg, XMMg)), XMMeps);
 
         XMMwi = _mm_sub_ps(
             XMMwi,
