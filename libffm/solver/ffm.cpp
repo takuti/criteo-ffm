@@ -296,7 +296,7 @@ ffm_model init_model(ffm_int n, ffm_int m, ffm_parameter param) {
 
   ffm_int k_aligned = get_k_aligned(model.k);
 
-  model.Wi = malloc_aligned_float((ffm_long)n * 2 * k_aligned);
+  model.Wi = malloc_aligned_float((ffm_long)n * 2 * kALIGN);
   model.W = malloc_aligned_float((ffm_long)n * m * k_aligned * 2);
 
   ffm_float *wi = model.Wi;
