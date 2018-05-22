@@ -320,7 +320,7 @@ ffm_model init_model(ffm_int n, ffm_int m, ffm_parameter param) {
 
   for (ffm_int j = 0; j < model.n; j++) {
     if (!model.disable_wi) {
-      wi[0] = distribution(generator);
+      wi[0] = 0;
       wi[kALIGN] = 1; // for AdaGrad
       wi += 2 * kALIGN;
     }
