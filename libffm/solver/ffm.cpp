@@ -109,7 +109,6 @@ inline ffm_float wTx(ffm_node *begin, ffm_node *end, ffm_float r,
 
         ffm_float *wig = wi + kALIGN;
         __m128 XMMwig = _mm_load_ps(wig);
-        XMMwig = _mm_add_ps(XMMwig, _mm_mul_ps(XMMg, XMMg));
 
         // add epsilon to prevent divergence of 1/sqrt(wig)
         XMMwig = _mm_add_ps(_mm_add_ps(XMMwig, _mm_mul_ps(XMMg, XMMg)), XMMeps);
