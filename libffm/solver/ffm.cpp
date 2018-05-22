@@ -100,7 +100,7 @@ inline ffm_float wTx(ffm_node *begin, ffm_node *end, ffm_float r,
       ffm_float *wi = model.Wi + (ffm_long)j * 2 * kALIGN;
       __m128 XMMwi = _mm_load_ps(wi);
 
-      __m128 XMMv = _mm_set1_ps(v * r);
+      __m128 XMMv = _mm_set1_ps(v * sqrt(r));
 
       if (do_update) {
         __m128 XMMkappav = _mm_mul_ps(XMMkappa, XMMv);
@@ -221,12 +221,12 @@ inline ffm_float wTx(ffm_node *begin, ffm_node *end, ffm_float r,
 
       if (do_update) {
         // AdaGrad
-        ffm_float g = lambda * wi[0] + kappa * (v * r);
+        ffm_float g = lambda * wi[0] + kappa * (v * sqrt(r));
         ffm_float *wig = wi + kALIGN;
         wig[0] += g * g;
         wi[0] -= eta / sqrt(wig[0]) * g;
       } else {
-        t += wi[0] * (v * r);
+        t += wi[0] * (v * sqrt(r));
       }
     }
   }
