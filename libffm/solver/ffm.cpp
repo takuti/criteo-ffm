@@ -77,12 +77,9 @@ ffm_long get_w_size(ffm_model &model) {
 }
 
 #if defined USESSE
-inline ffm_float wTx(ffm_node *begin, ffm_node *end, ffm_float r,
-                     ffm_model &model, bool disable_wi, ffm_float kappa = 0, ffm_float eta = 0,
+inline ffm_float wx(ffm_node *begin, ffm_node *end, ffm_float r,
+                    ffm_model &model, ffm_float kappa = 0, ffm_float eta = 0,
                      ffm_float lambda = 0, bool do_update = false) {
-  ffm_int align0 = 2 * get_k_aligned(model.k);
-  ffm_int align1 = model.m * align0;
-
   __m128 XMMkappa = _mm_set1_ps(kappa);
   __m128 XMMeta = _mm_set1_ps(eta);
   __m128 XMMlambda = _mm_set1_ps(lambda);
@@ -91,39 +88,87 @@ inline ffm_float wTx(ffm_node *begin, ffm_node *end, ffm_float r,
 
   __m128 XMMt = _mm_setzero_ps();
 
-  if (!disable_wi) {
-    for (ffm_node *N = begin; N != end; N++) {
-      ffm_int j = N->j;
-      ffm_float v = N->v;
-      if (j >= model.n) continue;
+  for (ffm_node *N = begin; N != end; N++) {
+    ffm_int j = N->j;
+    ffm_float v = N->v;
+    if (j >= model.n) continue;
 
-      ffm_float *wi = model.Wi + (ffm_long)j * 2 * kALIGN;
-      __m128 XMMwi = _mm_load_ps(wi);
+    ffm_float *wi = model.Wi + (ffm_long)j * 2 * kALIGN;
+    __m128 XMMwi = _mm_load_ps(wi);
 
-      __m128 XMMv = _mm_set1_ps(v * sqrt(r));
+    __m128 XMMv = _mm_set1_ps(v * sqrt(r));
 
-      if (do_update) {
-        __m128 XMMkappav = _mm_mul_ps(XMMkappa, XMMv);
-        __m128 XMMg = _mm_add_ps(_mm_mul_ps(XMMlambda, XMMwi),
-                                 XMMkappav);
+    if (do_update) {
+      __m128 XMMkappav = _mm_mul_ps(XMMkappa, XMMv);
+      __m128 XMMg = _mm_add_ps(_mm_mul_ps(XMMlambda, XMMwi),
+                               XMMkappav);
 
-        ffm_float *wig = wi + kALIGN;
-        __m128 XMMwig = _mm_load_ps(wig);
+      ffm_float *wig = wi + kALIGN;
+      __m128 XMMwig = _mm_load_ps(wig);
 
-        // add epsilon to prevent divergence of 1/sqrt(wig)
-        XMMwig = _mm_add_ps(_mm_add_ps(XMMwig, _mm_mul_ps(XMMg, XMMg)), XMMeps);
+      // add epsilon to prevent divergence of 1/sqrt(wig)
+      XMMwig = _mm_add_ps(_mm_add_ps(XMMwig, _mm_mul_ps(XMMg, XMMg)), XMMeps);
 
-        XMMwi = _mm_sub_ps(
-            XMMwi,
-            _mm_mul_ps(XMMeta, _mm_mul_ps(_mm_rsqrt_ps(XMMwig), XMMg)));
+      XMMwi = _mm_sub_ps(
+          XMMwi,
+          _mm_mul_ps(XMMeta, _mm_mul_ps(_mm_rsqrt_ps(XMMwig), XMMg)));
 
-        _mm_store_ps(wi, XMMwi);
-        _mm_store_ps(wig, XMMwig);
-      } else {
-        XMMt = _mm_add_ps(XMMt, _mm_mul_ps(XMMwi, XMMv));
-      }
+      _mm_store_ps(wi, XMMwi);
+      _mm_store_ps(wig, XMMwig);
+    } else {
+      XMMt = _mm_add_ps(XMMt, _mm_mul_ps(XMMwi, XMMv));
     }
   }
+
+  if (do_update) return 0;
+
+  ffm_float t;
+  _mm_store_ps(&t, XMMt);
+
+  return t;
+}
+
+#else
+
+inline ffm_float wx(ffm_node *begin, ffm_node *end, ffm_float r,
+                     ffm_model &model, ffm_float kappa = 0, ffm_float eta = 0,
+                     ffm_float lambda = 0, bool do_update = false) {
+  ffm_float t = 0;
+
+  for (ffm_node *N = begin; N != end; N++) {
+    ffm_int j = N->j;
+    ffm_float v = N->v;
+    if (j >= model.n) continue;
+
+    ffm_float *wi = model.Wi + (ffm_long)j * 2 * kALIGN;
+
+    if (do_update) {
+      // AdaGrad
+      ffm_float g = lambda * wi[0] + kappa * (v * sqrt(r));
+      ffm_float *wig = wi + kALIGN;
+      wig[0] += g * g;
+      wi[0] -= eta / sqrt(wig[0]) * g;
+    } else {
+      t += wi[0] * (v * sqrt(r));
+    }
+  }
+
+  return t;
+}
+#endif
+
+#if defined USESSE
+inline ffm_float wTx(ffm_node *begin, ffm_node *end, ffm_float r,
+                     ffm_model &model, ffm_float kappa = 0, ffm_float eta = 0,
+                     ffm_float lambda = 0, bool do_update = false) {
+  ffm_int align0 = 2 * get_k_aligned(model.k);
+  ffm_int align1 = model.m * align0;
+
+  __m128 XMMkappa = _mm_set1_ps(kappa);
+  __m128 XMMeta = _mm_set1_ps(eta);
+  __m128 XMMlambda = _mm_set1_ps(lambda);
+
+  __m128 XMMt = _mm_setzero_ps();
 
   for (ffm_node *N1 = begin; N1 != end; N1++) {
     ffm_int j1 = N1->j;
@@ -203,32 +248,12 @@ inline ffm_float wTx(ffm_node *begin, ffm_node *end, ffm_float r,
 #else
 
 inline ffm_float wTx(ffm_node *begin, ffm_node *end, ffm_float r,
-                     ffm_model &model, bool disable_wi, ffm_float kappa = 0, ffm_float eta = 0,
+                     ffm_model &model, ffm_float kappa = 0, ffm_float eta = 0,
                      ffm_float lambda = 0, bool do_update = false) {
   ffm_int align0 = 2 * get_k_aligned(model.k);
   ffm_int align1 = model.m * align0;
 
   ffm_float t = 0;
-
-  if (!disable_wi) {
-    for (ffm_node *N = begin; N != end; N++) {
-      ffm_int j = N->j;
-      ffm_float v = N->v;
-      if (j >= model.n) continue;
-
-      ffm_float *wi = model.Wi + (ffm_long)j * 2 * kALIGN;
-
-      if (do_update) {
-        // AdaGrad
-        ffm_float g = lambda * wi[0] + kappa * (v * sqrt(r));
-        ffm_float *wig = wi + kALIGN;
-        wig[0] += g * g;
-        wi[0] -= eta / sqrt(wig[0]) * g;
-      } else {
-        t += wi[0] * (v * sqrt(r));
-      }
-    }
-  }
 
   for (ffm_node *N1 = begin; N1 != end; N1++) {
     ffm_int j1 = N1->j;
@@ -637,7 +662,8 @@ ffm_model ffm_train_on_disk(string tr_path, string va_path,
 
         ffm_float r = param.normalization ? prob.R[i] : 1;
 
-        ffm_double t = wTx(begin, end, r, model, param.disable_wi);
+        ffm_double t = wTx(begin, end, r, model);
+        if (!param.disable_wi) t += wx(begin, end, r, model);
 
         ffm_double expnyt = exp(-y * t);
 
@@ -646,7 +672,8 @@ ffm_model ffm_train_on_disk(string tr_path, string va_path,
         if (do_update) {
           ffm_float kappa = -y * expnyt / (1 + expnyt); // dloss
 
-          wTx(begin, end, r, model, param.disable_wi, kappa, param.eta, param.lambda, true);
+          wTx(begin, end, r, model, kappa, param.eta, param.lambda, true);
+          if (!param.disable_wi) wx(begin, end, r, model, kappa, param.eta, param.lambda, true);
         }
       }
     }
@@ -781,7 +808,8 @@ ffm_double ffm_predict(ffm_node *begin, ffm_node *end, ffm_model &model) {
     r = 1 / r;
   }
 
-  ffm_double t = wTx(begin, end, r, model, model.disable_wi);
+  ffm_double t = wTx(begin, end, r, model);
+  if (!model.disable_wi) t += wx(begin, end, r, model);
 
   return 1 / (1 + exp(-t));
 }
