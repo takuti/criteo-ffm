@@ -773,7 +773,7 @@ ffm_model ffm_load_model(string path) {
   return model;
 }
 
-ffm_float ffm_predict(ffm_node *begin, ffm_node *end, ffm_model &model) {
+ffm_double ffm_predict(ffm_node *begin, ffm_node *end, ffm_model &model) {
   ffm_float r = 1;
   if (model.normalization) {
     r = 0;
@@ -781,7 +781,7 @@ ffm_float ffm_predict(ffm_node *begin, ffm_node *end, ffm_model &model) {
     r = 1 / r;
   }
 
-  ffm_float t = wTx(begin, end, r, model, model.disable_wi);
+  ffm_double t = wTx(begin, end, r, model, model.disable_wi);
 
   return 1 / (1 + exp(-t));
 }

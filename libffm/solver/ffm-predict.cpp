@@ -71,7 +71,7 @@ void predict(string test_path, string model_path, string output_path) {
       x.push_back(N);
     }
 
-    ffm_float y_bar = ffm_predict(x.data(), x.data() + x.size(), model);
+    ffm_double y_bar = ffm_predict(x.data(), x.data() + x.size(), model);
 
     loss -= y == 1 ? log(y_bar) : log(1 - y_bar);
 
