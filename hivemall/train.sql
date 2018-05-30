@@ -8,7 +8,11 @@ CREATE TABLE  criteo.ffm_model (
 
 INSERT OVERWRITE TABLE criteo.ffm_model
 SELECT
-  train_ffm(features, label, '-init_v random -max_init_value 0.5 -classification -iterations 15 -factors 4 -eta 0.2 -l2norm -optimizer adagrad -lambda 0.00002 -cv_rate 0.0 -disable_wi')
+  train_ffm(
+    features,
+    label,
+    '-init_v random -seed 43 -max_init_value 0.5 -classification -iterations 15 -factors 4 -eta 0.2 -optimizer adagrad -lambda 0.00002'
+  )
 FROM (
   SELECT
     features, label

@@ -8,7 +8,7 @@ SELECT
   t2.Xj
 from
   criteo.test_vectorized t1
-  LATERAL VIEW feature_pairs(l2_normalize(t1.features), '-ffm') t2 AS i, j, Xi, Xj
+  LATERAL VIEW feature_pairs(t1.features, '-ffm') t2 AS i, j, Xi, Xj
 ;
 
 WITH predicted AS (
